@@ -11,7 +11,7 @@
  * 4. 点击 第一个 .sapMLnkText 的 link
  * 5. 点击 FX Forecast Agent
  * 6. 点击 TAB：Interest Rate Differentials
- * 7. 读取 United States 行的 CPI 字段值，保存到 data.json
+ * 7. 读取 United States 行的 CPI 字段值，与qianwen数据 data.json 比较
  *
  * 要运行此脚本，需要先安装 Playwright：
  *   npm i - playwright
@@ -101,7 +101,7 @@ const fs = require('fs');
 
 
 
-    // 7) 读取 United States 行的 CPI 字段值并写入 data.json
+    // 7) 读取 United States 行的 CPI 字段值并与 data.json 比较
     await step('读取 United States 行的 CPI 字段值并与 data.json 比较', async () => {
       // 在页面上定位包含 United States 的行，然后通过表头 CPI 定位列
       const cpiValue = await page.evaluate(() => {
