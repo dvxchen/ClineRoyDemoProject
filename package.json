@@ -1,0 +1,16 @@
+{
+  "name": "00.roy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "roy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

@@ -1,0 +1,8 @@
+Action,Data,Expected Result
+用chrome-devtools打开https://usj-demo-dev-ui5.e17df97.stage.kyma.ondemand.com/,,
+点击Forecast Deviation Alert: Royalty里面的link: View
+点击TAB: Key Drivers for Future Performance
+点击 第一个.sapMLnkText 的link
+点击 FX Forecast Agent
+点击TAB：Interest Rate Differentials
+读取 United States 行的 CPI 字段值,,data.json
