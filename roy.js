@@ -102,7 +102,7 @@ const fs = require('fs');
 
 
     // 7) 读取 United States 行的 CPI 字段值并写入 data.json
-    await step('读取 United States 行的 CPI 字段值并写入 data.json', async () => {
+    await step('读取 United States 行的 CPI 字段值并与 data.json 比较', async () => {
       // 在页面上定位包含 United States 的行，然后通过表头 CPI 定位列
       const cpiValue = await page.evaluate(() => {
         function getText(el) {
@@ -241,9 +241,12 @@ const fs = require('fs');
 
        const obj = JSON.parse(jsonStr);
 
-       console.log(obj.value)
+       console.log('data.json的值：' + obj.value)
        if (obj.value.trim() === cpiValue) {
         console.log(`断言通过：CPI 值为 ${cpiValue}`);
+      
+       } else {
+        throw new Error(`CPI 值不匹配，期望 ${obj.value.trim()}，实际 ${cpiValue}`);
        } 
     });
 
