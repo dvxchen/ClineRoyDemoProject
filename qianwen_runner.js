@@ -290,14 +290,23 @@ async function run() {
     console.error('No actionable rows found in qianwen.csv.');
     process.exit(1);
   }
+  // Open DevTools automatically if CSV mentions chrome-devtools
+  const needDevtools = rows.some(r => /chrome-?devtools/i.test(r.Action || ''));
 
   const browser = await puppeteer.launch({
     headless: false, // so you can see the actions
+    devtools: needDevtools,
     defaultViewport: { width: 1280, height: 800 },
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox'
-    ],
+    args: needDevtools
+      ? [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--auto-open-devtools-for-tabs'
+        ]
+      : [
+          '--no-sandbox',
+          '--disable-setuid-sandbox'
+        ],
     // If you want to use an existing Chrome, set PUPPETEER_EXECUTABLE_PATH env var before running
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || detectBrowserPath()
   });
@@ -381,25 +390,15 @@ async function run() {
           let res = null;
           for (let t = 0; t < 20; t++) {
             res = await readValueFromTokenStream(page);
-
-            const data = '{ value: '+ res.value + ' }';
-            const jsonData = JSON.stringify(data, null, 2);
-            fs.writeFile('data.json', jsonData, (err) => {
-            if (err) {
-                  console.error('写入文件错误:', err);
-                  return;
-            }
-            
-            });
-            console.log('JSON文件写入成功');
-            //return;
             if (res && res.value !== null && res.value !== undefined) break;
             await new Promise(r => setTimeout(r, 1000));
           }
           if (res && res.value !== null && res.value !== undefined) {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
-            try { fs.writeFileSync('extracted_value.json', JSON.stringify({ value: res.value }, null, 2)); } catch {}
-            const expectedNum = parseFloat((expected || '').toString().replace('%','').trim());
+            const expectedTrim = (expected || '').toString().trim();
+            const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
+            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch {}
+            const expectedNum = parseFloat((expectedTrim || '').replace('%',''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
               if (diff <= 0.1) {
@@ -424,8 +423,10 @@ async function run() {
           }
           if (res && res.value !== null && res.value !== undefined) {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
-            try { fs.writeFileSync('extracted_value.json', JSON.stringify({ value: res.value }, null, 2)); } catch {}
-            const expectedNum = parseFloat((expected || '').toString().replace('%','').trim());
+            const expectedTrim = (expected || '').toString().trim();
+            const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
+            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch {}
+            const expectedNum = parseFloat((expectedTrim || '').replace('%',''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
               if (diff <= 0.1) {

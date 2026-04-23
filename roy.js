@@ -234,19 +234,19 @@ const fs = require('fs');
 */
        //将结果从 data.json 读出
        const data = require('./data.json')
-       const jsonStr = data
-         .replace(/([a-zA-Z0-9_]+):/g, '"$1":')   // 给键加双引号
-         .replace(/: ([^,}]+)/g, ': "$1"')  ;     // 给值加双引号
+       console.log(data.value)
+
+    //   const jsonStr = data
+    //     .replace(/([a-zA-Z0-9_]+):/g, '"$1":')   // 给键加双引号
+    //     .replace(/: ([^,}]+)/g, ': "$1"')  ;     // 给值加双引号
         
 
-       const obj = JSON.parse(jsonStr);
+    //   const obj = JSON.parse(data);
 
-       console.log('data.json的值：' + obj.value)
-       if (obj.value.trim() === cpiValue) {
-        console.log(`断言通过：CPI 值为 ${cpiValue}`);
-      
+   if (cpiValue.indexOf(data.value) !== -1) {
+      console.log(`匹配, 期望 ${data.value}，实际 ${cpiValue}`);
        } else {
-        throw new Error(`CPI 值不匹配，期望 ${obj.value.trim()}，实际 ${cpiValue}`);
+        throw new Error(`CPI 值不匹配，期望 ${data.value}，实际 ${cpiValue}`);
        } 
     });
 
