@@ -120,9 +120,14 @@ let allLogs = [];
 
           }
         }
-        try {
-          allLogs = allLogs.concat(dataJson);
 
+
+
+
+        try {
+          const users = JSON.parse(dataJson);
+          allLogs = allLogs.concat(users);
+          //   console.log(allLogs);
         } catch (readErr) {
           console.error(`concatenate error 1: `, readErr);
         }
