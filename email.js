@@ -36,7 +36,7 @@ const mailOptions = {
     html: "<b>你好，</b><p>这是自动发送的日志报告，请查收附件。</p>", // HTML 正文
     attachments: [
         {
-            filename: 'log.json',       // 附件文件名
+            filename: 'merged-logs.json',       // 附件文件名
             path: logFilePath           // 附件文件路径
         }
     ]
