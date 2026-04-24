@@ -47,11 +47,16 @@ function runFile(path) {
           const dirPath = path.join(__dirname, file0, '\\');
           await runFile(dirPath + file);
 
+
+
         } catch (readErr) {
           console.error(`读取文件 ${file} 失败:`, readErr);
         }
       }
     }
+
+    await runFile(path.join(__dirname, 'email.js'));
+
   } catch (err) {
     console.error('读取目录失败:', err);
   }
