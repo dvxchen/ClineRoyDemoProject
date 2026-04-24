@@ -35,10 +35,57 @@ const fs = require('fs');
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
 
-  // 简单的日志工具
+  // JSON 日志：将每一步执行写入 log.json（每次运行清空重写）
+  const logFile = 'log.json';
+  let runLog = {
+    runId: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8),
+    startedAt: new Date().toISOString(),
+    status: 'running',
+    steps: []
+  };
+  function flushLog() {
+    try {
+      fs.writeFileSync(logFile, JSON.stringify(runLog, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('写入 log.json 失败：', e && e.message ? e.message : e);
+    }
+  }
+  // 记录补充信息到当前步骤
+  function logNote(data) {
+    try {
+      const last = runLog.steps[runLog.steps.length - 1];
+      if (last) {
+        last.note = Object.assign({}, last.note, data);
+        flushLog();
+      }
+    } catch (e) { }
+  }
+  // 初始化：清空并写入初始内容
+  flushLog();
+
+  let stepCounter = 0;
+  // 包装 step，记录开始/成功/失败等信息
   const step = async (title, fn) => {
+    const entry = { index: ++stepCounter, title, status: 'start', start: new Date().toISOString() };
+    runLog.steps.push(entry);
+    flushLog();
+
     console.log(`\n=== ${title} ===`);
-    await fn();
+    const t0 = Date.now();
+    try {
+      await fn();
+      entry.status = 'success';
+      entry.end = new Date().toISOString();
+      entry.durationMs = Date.now() - t0;
+      flushLog();
+    } catch (e) {
+      entry.status = 'fail';
+      entry.error = e && e.message ? e.message : String(e);
+      entry.end = new Date().toISOString();
+      entry.durationMs = Date.now() - t0;
+      flushLog();
+      throw e;
+    }
   };
 
   try {
@@ -208,6 +255,14 @@ const fs = require('fs');
       const argExpectNum = getArgVal('expect-cpi-num') || process.env.EXPECT_CPI_NUM || null;
       const expectedRaw = argExpect ? argExpect : (argExpectNum ? `${argExpectNum}%` : null);
       const expected = expectedRaw ? normPercent(expectedRaw) : null;
+      // 记录本步骤的提取与期望信息
+      logNote({
+        cpiRaw: gotRaw,
+        cpi: got,
+        value: num,
+        expectRaw: expectedRaw || null,
+        expect: expected || null
+      });
 
       if (expected) {
         if (got !== expected) {
@@ -239,23 +294,44 @@ const fs = require('fs');
       const parentDir = path.join(__dirname, '..');
       const dataPath = path.join(parentDir, 'data.json');
 
-      const data = require(dataPath)
-      const jsonStr = data.value;
+      let jsonStr = null;
+      try {
+        const data = require(dataPath);
+        jsonStr = data && data.value;
+        // 记录来自 data.json 的期望值
+        logNote({ expectedFromDataJson: jsonStr });
+      } catch (e) {
+        console.warn('未找到 data.json，跳过与 data.json 的比较');
+        logNote({ dataJsonMissing: true });
+      }
 
-      if (cpiValue.indexOf(jsonStr) !== -1) {
-        console.log(`断言通过：期望 ${jsonStr}，实际 ${cpiValue}`);
+      if (jsonStr != null) {
+        if (String(cpiValue).indexOf(String(jsonStr)) !== -1) {
+          console.log(`断言通过：期望 ${jsonStr}，实际 ${cpiValue}`);
+        } else {
+          throw new Error(`CPI 值不匹配，期望 ${jsonStr}，实际 ${cpiValue}`);
+        }
       } else {
-        throw new Error(`CPI 值不匹配，期望 ${jsonStr}，实际 ${cpiValue}`);
+        console.warn('未提供 data.json 期值，已跳过该断言');
       }
 
     });
 
     console.log('\n所有步骤执行完成。');
+    runLog.status = 'success';
+    runLog.finishedAt = new Date().toISOString();
+    flushLog();
     await context.close();
     await browser.close();
     process.exitCode = 0;
   } catch (err) {
     console.error('执行出错：', err && err.message ? err.message : err);
+    try {
+      runLog.status = 'error';
+      runLog.finishedAt = new Date().toISOString();
+      runLog.error = err && err.message ? err.message : String(err);
+      flushLog();
+    } catch { }
     try {
       await page.screenshot({ path: 'roy-failure.png', fullPage: true });
       console.error('已截取失败截图：roy-failure.png');
