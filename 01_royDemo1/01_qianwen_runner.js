@@ -25,6 +25,9 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 
+// Allow keeping the browser open for debugging via flag or env
+const KEEP_OPEN = process.env.KEEP_OPEN === '1' || process.argv.includes('--keep-open');
+
 function parseCsvThreeColumns(csvText) {
   const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (lines.length === 0) return [];
@@ -81,7 +84,7 @@ function detectBrowserPath() {
   for (const p of candidates) {
     try {
       if (fs.existsSync(p)) return p;
-    } catch {}
+    } catch { }
   }
   return undefined;
 }
@@ -155,10 +158,10 @@ async function typeMessage(page, handle, message) {
 
   try {
     await handle.focus();
-  } catch {}
+  } catch { }
 
   if (tag === 'textarea' || tag === 'input') {
-    await page.evaluate(el => { el.value = ''; }, handle).catch(() => {});
+    await page.evaluate(el => { el.value = ''; }, handle).catch(() => { });
     await handle.type(message, { delay: 10 });
     return true;
   }
@@ -169,18 +172,18 @@ async function typeMessage(page, handle, message) {
     await page.evaluate((el, text) => {
       el.innerHTML = '';
       el.focus();
-    }, handle, message).catch(() => {});
+    }, handle, message).catch(() => { });
     // Type the message
     try {
       await page.keyboard.type(message, { delay: 10 });
-    } catch {}
+    } catch { }
     return true;
   }
 
   // Generic fallback: click and type
   try {
     await handle.click({ clickCount: 1, delay: 50 });
-  } catch {}
+  } catch { }
   await page.keyboard.type(message, { delay: 10 });
   return true;
 }
@@ -196,7 +199,7 @@ async function clickButtonByText(page, textCandidates) {
         try {
           await el.click({ delay: 20 });
           return true;
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -219,7 +222,7 @@ async function extractValueFromText(text) {
       if (obj && Object.prototype.hasOwnProperty.call(obj, 'value')) {
         return { value: obj.value, raw: jsonStr };
       }
-    } catch {}
+    } catch { }
   }
   let m = raw.match(/"value"\s*:\s*("?)(-?\d+(?:\.\d+)?)\1/);
   if (m) return { value: parseFloat(m[2]), raw };
@@ -229,14 +232,14 @@ async function extractValueFromText(text) {
 }
 
 async function readJsonValueFromPage(page) {
-  const selectors = ['pre','code','div[class*="code"]','div[class*="json"]','div[role="textbox"]','div[data-language]'];
+  const selectors = ['pre', 'code', 'div[class*="code"]', 'div[class*="json"]', 'div[role="textbox"]', 'div[data-language]'];
   for (const sel of selectors) {
     const elems = await page.$$(sel);
     for (const el of elems) {
       const text = await page.evaluate(e => (e.innerText || e.textContent || '').trim(), el).catch(() => '');
       const res = extractValueFromText(text);
       if (res.value !== null && res.value !== undefined) {
-        try { await el.dispose?.(); } catch {}
+        try { await el.dispose?.(); } catch { }
         return res;
       }
     }
@@ -248,7 +251,7 @@ async function readJsonValueFromPage(page) {
     if (resWhole.value !== null && resWhole.value !== undefined) {
       return resWhole;
     }
-  } catch {}
+  } catch { }
   return { value: null, raw: null };
 }
 
@@ -299,20 +302,28 @@ async function run() {
     defaultViewport: { width: 1280, height: 800 },
     args: needDevtools
       ? [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--auto-open-devtools-for-tabs'
-        ]
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--auto-open-devtools-for-tabs'
+      ]
       : [
-          '--no-sandbox',
-          '--disable-setuid-sandbox'
-        ],
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ],
     // If you want to use an existing Chrome, set PUPPETEER_EXECUTABLE_PATH env var before running
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || detectBrowserPath()
   });
 
   const page = await browser.newPage();
   page.setDefaultTimeout(30000);
+
+  // Graceful shutdown on Ctrl+C or termination
+  const cleanup = async () => {
+    try { await page.close(); } catch { }
+    try { await browser.close(); } catch { }
+  };
+  process.once('SIGINT', () => { cleanup().finally(() => process.exit(130)); });
+  process.once('SIGTERM', () => { cleanup().finally(() => process.exit(143)); });
 
   try {
     for (const [i, row] of rows.entries()) {
@@ -331,7 +342,7 @@ async function run() {
         console.log(`[Row ${i + 2}] Navigating to: ${url}`);
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 }).catch(async (e) => {
           console.warn(`Navigation warning: ${e.message}`);
- await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => { });
         });
         // Give page time to settle dynamic content
         await new Promise(r => setTimeout(r, 2000));
@@ -352,7 +363,7 @@ async function run() {
           continue;
         }
         await typeMessage(page, inputHandle, message);
-        try { await inputHandle.dispose?.(); } catch {}
+        try { await inputHandle.dispose?.(); } catch { }
         await new Promise(r => setTimeout(r, 500));
         continue;
       }
@@ -371,7 +382,7 @@ async function run() {
         if (!clicked) {
           // Fallback: try pressing Enter in focused input (common in chat UIs)
           console.warn(`[Row ${i + 2}] Button not found, trying Enter key fallback...`);
-          await page.keyboard.press('Enter').catch(() => {});
+          await page.keyboard.press('Enter').catch(() => { });
         }
         await new Promise(r => setTimeout(r, 1500));
         continue;
@@ -379,7 +390,7 @@ async function run() {
 
       if (/^(?:回车)$/i.test(action) || /(?:enter|回车)/i.test(action)) {
         console.log(`[Row ${i + 2}] Pressing Enter...`);
-        try { await page.keyboard.press('Enter'); } catch {}
+        try { await page.keyboard.press('Enter'); } catch { }
         await new Promise(r => setTimeout(r, 1000));
         continue;
       }
@@ -397,8 +408,8 @@ async function run() {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
             const expectedTrim = (expected || '').toString().trim();
             const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
-            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch {}
-            const expectedNum = parseFloat((expectedTrim || '').replace('%',''));
+            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch { }
+            const expectedNum = parseFloat((expectedTrim || '').replace('%', ''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
               if (diff <= 0.1) {
@@ -425,8 +436,8 @@ async function run() {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
             const expectedTrim = (expected || '').toString().trim();
             const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
-            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch {}
-            const expectedNum = parseFloat((expectedTrim || '').replace('%',''));
+            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch { }
+            const expectedNum = parseFloat((expectedTrim || '').replace('%', ''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
               if (diff <= 0.1) {
@@ -451,8 +462,12 @@ async function run() {
   } catch (err) {
     console.error('Automation error:', err);
   } finally {
-    // Keep the browser open for manual inspection. Close it manually when done.
-    // await browser.close();
+    if (!KEEP_OPEN) {
+      try { await page.close(); } catch { }
+      try { await browser.close(); } catch { }
+    } else {
+      console.log('KEEP_OPEN enabled: leaving the browser open. Use Ctrl+C to exit and we will close the browser.');
+    }
   }
 }
 
