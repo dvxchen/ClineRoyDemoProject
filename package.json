@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "fs-extra": "^11.3.4",
     "glob": "^13.0.6",
     "nodemailer": "^8.0.5",
     "playwright": "^1.59.1",

@@ -3,7 +3,7 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 
 // 1. 读取 log.json 文件
-const logFilePath = path.join(__dirname, 'log.json');
+const logFilePath = path.join(__dirname, 'merged-logs.json');
 let logData;
 
 try {

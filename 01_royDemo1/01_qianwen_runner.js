@@ -25,6 +25,17 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 
+const LOG_PATH = path.resolve(__dirname, 'log.json');
+let LOG_BUFFER = [];
+function resetLogFile() {
+  try { fs.writeFileSync(LOG_PATH, '[]'); LOG_BUFFER = []; } catch { }
+}
+function logStep(entry) {
+  const record = Object.assign({ ts: new Date().toISOString() }, entry);
+  LOG_BUFFER.push(record);
+  try { fs.writeFileSync(LOG_PATH, JSON.stringify(LOG_BUFFER, null, 2)); } catch { }
+}
+
 // Allow keeping the browser open for debugging via flag or env
 const KEEP_OPEN = process.env.KEEP_OPEN === '1' || process.argv.includes('--keep-open');
 
@@ -281,9 +292,14 @@ async function readValueFromTokenStream(page) {
 }
 
 async function run() {
+  // Initialize log.json (truncate) at start of run
+  resetLogFile();
+  logStep({ event: 'start' });
+
   const csvPath = path.resolve(__dirname, 'qianwen.csv');
   if (!fs.existsSync(csvPath)) {
     console.error('qianwen.csv not found in directory.');
+    logStep({ event: 'error', message: 'qianwen.csv not found in directory.' });
     process.exit(1);
   }
 
@@ -291,8 +307,13 @@ async function run() {
   const rows = parseCsvThreeColumns(csvText);
   if (!rows.length) {
     console.error('No actionable rows found in qianwen.csv.');
+    logStep({ event: 'error', message: 'No actionable rows found in qianwen.csv.' });
     process.exit(1);
   }
+
+  // CSV parsed
+  logStep({ event: 'csv_parsed', rows: rows.length });
+
   // Open DevTools automatically if CSV mentions chrome-devtools
   const needDevtools = rows.some(r => /chrome-?devtools/i.test(r.Action || ''));
 
@@ -338,14 +359,19 @@ async function run() {
         const url = data || extractUrl(action);
         if (!url) {
           console.warn(`[Row ${i + 2}] No URL found to open.`);
+          logStep({ row: i + 2, step: 'navigate', url: null, status: 'no_url' });
+          continue;
         }
         console.log(`[Row ${i + 2}] Navigating to: ${url}`);
+        logStep({ row: i + 2, step: 'navigate', url });
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 }).catch(async (e) => {
           console.warn(`Navigation warning: ${e.message}`);
+          logStep({ row: i + 2, step: 'navigate_warning', url, message: e && e.message ? e.message : String(e) });
           await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => { });
         });
         // Give page time to settle dynamic content
         await new Promise(r => setTimeout(r, 2000));
+        logStep({ row: i + 2, step: 'navigate_done', url, status: 'ok' });
         continue;
       }
 
@@ -357,13 +383,16 @@ async function run() {
           continue;
         }
         console.log(`[Row ${i + 2}] Typing message (${message.length} chars)...`);
+        logStep({ row: i + 2, step: 'input', messageLength: message.length });
         const inputHandle = await findChatInput(page);
         if (!inputHandle) {
           console.warn(`[Row ${i + 2}] No chat input box detected.`);
+          logStep({ row: i + 2, step: 'input', status: 'no_input_box' });
           continue;
         }
         await typeMessage(page, inputHandle, message);
         try { await inputHandle.dispose?.(); } catch { }
+        logStep({ row: i + 2, step: 'input_done', messageLength: message.length });
         await new Promise(r => setTimeout(r, 500));
         continue;
       }
@@ -378,10 +407,13 @@ async function run() {
         }
 
         console.log(`[Row ${i + 2}] Clicking button (candidates: ${textCandidates.join(' | ')})...`);
+        logStep({ row: i + 2, step: 'click', candidates: textCandidates });
         let clicked = await clickButtonByText(page, textCandidates);
+        logStep({ row: i + 2, step: 'click_result', clicked });
         if (!clicked) {
           // Fallback: try pressing Enter in focused input (common in chat UIs)
           console.warn(`[Row ${i + 2}] Button not found, trying Enter key fallback...`);
+          logStep({ row: i + 2, step: 'click_fallback', method: 'Enter' });
           await page.keyboard.press('Enter').catch(() => { });
         }
         await new Promise(r => setTimeout(r, 1500));
@@ -390,6 +422,7 @@ async function run() {
 
       if (/^(?:回车)$/i.test(action) || /(?:enter|回车)/i.test(action)) {
         console.log(`[Row ${i + 2}] Pressing Enter...`);
+        logStep({ row: i + 2, step: 'press_enter' });
         try { await page.keyboard.press('Enter'); } catch { }
         await new Promise(r => setTimeout(r, 1000));
         continue;
@@ -407,11 +440,11 @@ async function run() {
           if (res && res.value !== null && res.value !== undefined) {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
             const expectedTrim = (expected || '').toString().trim();
-            const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
-            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch { }
+            logStep({ row: i + 2, step: 'read_token_value', value: res.value, expected: expectedTrim || null });
             const expectedNum = parseFloat((expectedTrim || '').replace('%', ''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
+              logStep({ row: i + 2, step: 'compare', expected: expectedTrim, diff, match: diff <= 0.1 });
               if (diff <= 0.1) {
                 console.log(`[Row ${i + 2}] Value matches expected (${expected}).`);
               } else {
@@ -420,6 +453,7 @@ async function run() {
             }
           } else {
             console.warn(`[Row ${i + 2}] Could not find the next .token value after "value".`);
+            logStep({ row: i + 2, step: 'read_token_value', status: 'not_found' });
           }
           await new Promise(r => setTimeout(r, 500));
           continue;
@@ -435,11 +469,11 @@ async function run() {
           if (res && res.value !== null && res.value !== undefined) {
             console.log(`[Row ${i + 2}] Extracted value: ${res.value}`);
             const expectedTrim = (expected || '').toString().trim();
-            const outFile = (expectedTrim && /\.json$/i.test(expectedTrim)) ? expectedTrim : 'extracted_value.json';
-            try { fs.writeFileSync(outFile, JSON.stringify({ value: res.value }, null, 2)); } catch { }
+            logStep({ row: i + 2, step: 'read_json_value', value: res.value, expected: expectedTrim || null });
             const expectedNum = parseFloat((expectedTrim || '').replace('%', ''));
             if (!Number.isNaN(expectedNum)) {
               const diff = Math.abs(parseFloat(res.value) - expectedNum);
+              logStep({ row: i + 2, step: 'compare', expected: expectedTrim, diff, match: diff <= 0.1 });
               if (diff <= 0.1) {
                 console.log(`[Row ${i + 2}] Value expected (${expected}).`);
               } else {
@@ -448,6 +482,7 @@ async function run() {
             }
           } else {
             console.warn(`[Row ${i + 2}] Could not find a JSON block with a 'value' key after waiting.`);
+            logStep({ row: i + 2, step: 'read_json_value', status: 'not_found' });
           }
           await new Promise(r => setTimeout(r, 500));
           continue;
@@ -456,11 +491,14 @@ async function run() {
 
       // Unknown action fallback
       console.warn(`[Row ${i + 2}] Unrecognized action: ${action}`);
+      logStep({ row: i + 2, step: 'unrecognized', action });
     }
 
     console.log('Automation sequence complete.');
+    logStep({ event: 'complete' });
   } catch (err) {
     console.error('Automation error:', err);
+    logStep({ event: 'error', message: (err && err.message) ? err.message : String(err) });
   } finally {
     if (!KEEP_OPEN) {
       try { await page.close(); } catch { }
