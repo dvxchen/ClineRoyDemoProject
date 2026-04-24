@@ -34,18 +34,41 @@ let allLogs = [];
     const files0 = await fs.readdir(dirPath0);
     for (const file0 of files0) {
       const dirPath = path.join(__dirname, file0);
+      try {
+        if (file0 === '.git') {
+          continue
+        }
+        if (file0 === 'node_modules') {
+          continue
+        }
+        if (file0 === 'data.json') {
+          continue
+        }
+        if (file0 === 'merged-logs.json') {
+          continue
+        }
+        const stats = fs0.statSync(dirPath);
+        if (stats.isDirectory()) {
 
-      const stats = fs0.statSync(dirPath);
-      if (stats.isDirectory()) {
-
-      } else {
-        continue
+        } else {
+          continue
+        }
+      } catch (err) {
+        console.error('read js file error 0 :', err);
       }
+
+
 
       const files = await fs.readdir(dirPath);
       const jsFiles = files.filter(file => file.endsWith('.js'));
+
       // 使用 for...of 循环
       for (const file of jsFiles) {
+
+        if (file === 'log.json') {
+          continue
+        }
+
         try {  // read js in current folder
 
           const filePath = path.join(dirPath, file);
@@ -54,7 +77,7 @@ let allLogs = [];
         } catch (err) {
           console.error('read js file error:', err);
         }
-        const dirPath = path.join(__dirname, file0, '\\');
+        const dirPath1 = path.join(__dirname, file0, '\\');
         //delete  log.json file in parent folder and current folder
         const filePPath = path.join(__dirname, 'log.json');
         const filePPathAll = path.join(__dirname, 'merged-logs.json');
@@ -72,7 +95,7 @@ let allLogs = [];
         }
 
         try {
-          await runFile(dirPath + '\\' + file);
+          await runFile(dirPath1 + '\\' + file);
         } catch (err) {
           console.error('run  js error:', err);
         }
@@ -113,13 +136,13 @@ let allLogs = [];
       fs1.writeFileSync(filePPathAllx, JSON.stringify(allLogs, null, 2));
       console.log('JSON 日志合并完成');
     } catch (err) {
-      console.error('cancategate error 2:', err);
+      console.error('cancatenate error 2:', err);
     }
 
     try { // send email
       await runFile(path.join(__dirname, 'email.js'));
     } catch (err) {
-      console.error('cancategate error:', err);
+      console.error('cancatenate error:', err);
     }
 
 
