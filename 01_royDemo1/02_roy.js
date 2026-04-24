@@ -240,17 +240,12 @@ const fs = require('fs');
       const dataPath = path.join(parentDir, 'data.json');
 
       const data = require(dataPath)
-      const jsonStr = data
-        .replace(/([a-zA-Z0-9_]+):/g, '"$1":')   // 给键加双引号
-        .replace(/: ([^,}]+)/g, ': "$1"');     // 给值加双引号
+      const jsonStr = data.value;
 
-
-      const obj = JSON.parse(jsonStr).value.trim();
-
-      if (cpiValue.indexOf(obj) !== -1) {
-        console.log(`断言通过：期望 ${obj}，实际 ${cpiValue}`);
+      if (cpiValue.indexOf(jsonStr) !== -1) {
+        console.log(`断言通过：期望 ${jsonStr}，实际 ${cpiValue}`);
       } else {
-        throw new Error(`CPI 值不匹配，期望 ${obj}，实际 ${cpiValue}`);
+        throw new Error(`CPI 值不匹配，期望 ${jsonStr}，实际 ${cpiValue}`);
       }
 
     });
