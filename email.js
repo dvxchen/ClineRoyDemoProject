@@ -66,22 +66,7 @@ const htmlContent = `
             </tr>
         </thead>
         <tbody>
-            ${users.map(user => `
-                <tr>
-                    <td>${user.index}</td>
-                    <td>${user.title}</td>
-                    <td>${user.ts}</td>
-                    <td>${user.event}</td>
-                    <td>${user.row}</td>
-                    <td>${user.step}</td>
-                    <td>${user.url}</td>
-                    <td>${user.status}</td>
-                    <td>${user.value}</td>
-                    <td>${user.expected}</td>
-                    <td>${user.startedAt}</td>
-                    <td>${user.note}</td>
-                </tr>
-            `).join('')}
+ 
         </tbody>
     </table>
 </body>

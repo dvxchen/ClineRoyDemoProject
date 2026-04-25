@@ -26,6 +26,8 @@ function runFile(path) {
 }
 
 let allLogs = [];
+let caseName = [];
+let user1 = [];
 
 (async () => {
   try {
@@ -69,6 +71,8 @@ let allLogs = [];
           continue
         }
 
+        caseName = file;
+
         try {  // read js in current folder
 
           const filePath = path.join(dirPath, file);
@@ -102,15 +106,18 @@ let allLogs = [];
 
 
         let dataJson = [];
+        let fileLocation = [];
 
         try { // find log.json file 
           dataJson = fs3.readFileSync(fileCPath, 'utf-8');
+          fileLocation = fileCPath
           //console.log('读取内容:', dataJson);
         } catch (err) {
           if (err.code === 'ENOENT') {
             console.log('文件不存在当前目录');
             try {
               dataJson = fs3.readFileSync(filePPath, 'utf-8');
+              fileLocation = filePPath
               //console.log('读取内容:', dataJson);
             } catch (err) {
               if (err.code === 'ENOENT') {
@@ -125,9 +132,42 @@ let allLogs = [];
 
 
         try {
-          const users = JSON.parse(dataJson);
-          allLogs = allLogs.concat(users);
-          //   console.log(allLogs);
+          user1 = JSON.parse(dataJson);
+
+          if (!Array.isArray(user1)) {
+            console.log('检测到文件不是数组，正在转换为数组格式...');
+            // 如果原文件是对象，把它包在数组里；如果是空的，创建空数组
+            user1 = [user1];
+
+            fs3.writeFileSync(fileLocation, JSON.stringify(user1, null, 2));
+            console.log('✅ 成功写入！');
+            dataJson = fs3.readFileSync(fileLocation, 'utf-8');
+            console.log('✅ 再次读出！');
+            user1 = JSON.parse(dataJson);
+          }
+
+          let final = [];
+          final = ' ---------------------------------------(Success)'
+          //搜索是否有failed的， 给个总体成功或失败
+          if (dataJson.indexOf("faild") !== -1) {
+            final = '---------------------------------------(Failed)'
+          }
+          if (dataJson.indexOf("not_found") !== -1) {
+            final = '---------------------------------------(Failed)'
+          }
+
+          const newItem = {
+            id: 0,
+            title: caseName + final,
+            time: new Date().toISOString()
+          };
+          // 头部追加
+          user1.unshift(newItem);
+
+          //  const resultJson = JSON.stringify(users, null, 2);
+
+          allLogs = allLogs.concat(user1);
+          console.log(allLogs);
         } catch (readErr) {
           console.error(`concatenate error 1: `, readErr);
         }
