@@ -1,0 +1,3 @@
+Action,Data,Expected Result
+open https://www.bing.com with chrome-devtools,,	
+input hello world in the searchbox,hello world,Search results for "hello world" are displayed
