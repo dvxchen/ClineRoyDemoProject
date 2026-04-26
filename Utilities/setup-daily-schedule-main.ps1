@@ -19,7 +19,7 @@ Write-Host ""
 
 # Get current directory
 $CurrentDir = Get-Location
-$BatchFile = Join-Path $CurrentDir "run-daily-tests-all.bat"
+$BatchFile = Join-Path $CurrentDir "main.bat"
 
 # Check if batch file exists
 if (-not (Test-Path $BatchFile)) {
