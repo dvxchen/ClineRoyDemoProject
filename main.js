@@ -205,19 +205,16 @@ let user1 = [];
           await runFile(path.join(__dirname, 'Utilities', 'email.js'));
         }
 
-        const fileLocation1 = path.join(__dirname, 'roy-failure.png');
-        const filePath1 = path.join(targetDir, 'roy-failure.png');
-        //await fs2.remove(fileLocation1);
-
-
-        if (fs0.existsSync(fileLocation1)) {
-          //   console.log('✅ 文件存在');
-          await fs2.rename(fileLocation1, filePath1);
-          // 在这里读取或操作文件
-        } else {
+        const dirPath2 = path.join(__dirname);
+        const files2 = await fs.readdir(dirPath2);
+        const pngFiles = files2.filter(file => file.endsWith('.png'));
+        for (const file0 of pngFiles) {
+          const fileLocation1 = path.join(__dirname, file0);
+          const filePath1 = path.join(targetDir, file0);
+          if (fs0.existsSync(fileLocation1)) {
+            await fs2.rename(fileLocation1, filePath1);
+          }
         }
-
-
 
       } catch (err) {
         console.error('cancatenate error:', err);
