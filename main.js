@@ -193,9 +193,14 @@ let user1 = [];
         console.error('cancatenate error 2:', err);
       }
 
-      try { // send email
+      try {
 
         const data = require(path.join(__dirname, 'Utilities', 'Settings.json'));
+        if (data.SHOW_LOG === "all") {
+          console.log(allLogs);
+        }
+
+        // send email
         if (data.EMAIL_ENABLE === "true") {
           await runFile(path.join(__dirname, 'Utilities', 'email.js'));
         }
