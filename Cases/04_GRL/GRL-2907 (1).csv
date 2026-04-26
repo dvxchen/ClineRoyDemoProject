@@ -1,0 +1,43 @@
+Action,Data,Expected Result
+"Log in to the home page of GRL
+
+Open the Manage Account Determination Rules Application",,"User can open the Manage Account Determination Rules, user can see the list page with list page header and list page content area."
+Click Create button on the top-right of of Company Code Account Determinations list,,"Should navigate to the Object page of Manage Account Determination Rules.
+
+And pop up a dialog, with title Create Account Determination, a mandatory value help field for Company Code."
+"Click the value help icon of Company Code, select one, Click Continue button.","eg: 
+
+1710","Should navigate to the Object Page of Manage Account Determination Rules application.
+
+And the Object Page should in create mode.
+
+In the header, the title should be 'New: Account Determination Rules'
+
+In the content area, there are two sections:
+ * Rules
+ * Administrative Data"
+"Click ""Add Rule"" button on the top-right of Rules table.
+
+Click ""Add Rule First"" button.",,"There is a new record shows in rule table.
+
+It's sequence value should be ""1"", not editable.
+
+The other 4 column should be empty with value help.
+
+There should be a checkbox at the beginning of the row."
+Click the value help icon for Resulting G/L Account.,,"The value help dialog for account should be opened.
+
+In the items list, there should be 4 columns:
+ * Account Code
+ * Account Name
+ * Business System
+ * is Blocked for Posting
+
+For column 'Blocked for Posting', it's value should be 'YES' / 'NO'"
+"Click Cancel button on the bottom-right of value help dialog.
+
+Click Discard Draft button on the bottom-right of New Account Determination Rules Object Page. Click Discard button.",,"Should navigate back to the list page of Manage Account Determination Rules.
+
+There should be a toast message: ""Draft discarded""
+
+And there should be no determination rules created."

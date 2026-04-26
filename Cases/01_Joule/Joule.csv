@@ -1,0 +1,7 @@
+Action,Data,Expected Result
+用chrome-devtools打开http://fpa-demo.e17df97.stage.kyma.ondemand.com/,,
+点击 Ask joule about Profit 图标,,
+在输入区域输入“公司盈利了吗？”,,
+点击paper plane按钮,,
+点击Expand/Collapse,,
+读取第二个黑框里的数据,,

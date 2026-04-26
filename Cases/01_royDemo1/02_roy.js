@@ -292,7 +292,7 @@ const fs = require('fs');
       console.log(__dirname);
       const path = require('path');
       const parentDir = path.join(__dirname, '..');
-      const dataPath = path.join(parentDir, 'data.json');
+      const dataPath = path.join(__dirname, 'data.json');
 
       let jsonStr = null;
       try {

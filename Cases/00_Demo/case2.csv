@@ -1,0 +1,3 @@
+Action,Data,Expected Result
+open Base Url,,"page is not open"
+input Hello Worlxxx,Hello Worlyy,"search box shows: Hello Worzzz"

@@ -1,0 +1,6 @@
+{
+    "BASE_URL": "https://grl-dev-eu10-team-rockets-3.dev-eu10.greenledger.sustainability.cloud.sap/",
+    "EMAIL_TO": "davy.chen+1@sap.com",
+    "SCHEDULE": "23:00",  
+    "Enabled": "false" 
+ }

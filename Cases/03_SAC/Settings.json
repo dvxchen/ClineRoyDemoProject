@@ -1,0 +1,6 @@
+{
+    "BASE_URL": "http://fpa-demo.e17df97.stage.kyma.ondemand.com/",
+    "EMAIL_TO": "davy.chen@sap.com",
+    "SCHEDULE": "21:00",  
+    "Enabled": "false" 
+ }

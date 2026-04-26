@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Client Page</title>
+</head>
+<body>
+  <h1>Test Server</h1>
+  <input id="msg" placeholder="Enter something" />
+  <button id="btn">Click Me</button>
+  <p id="result"></p>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const result = document.getElementById('result');
+
+    btn.onclick = () => {
+      const val = document.getElementById('msg').value;
+      result.innerText = 'You entered: ' + val;
+    };
+  </script>
+</body>
+</html>

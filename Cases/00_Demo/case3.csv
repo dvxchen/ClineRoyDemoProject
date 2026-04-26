@@ -1,0 +1,4 @@
+Action,Data,Expected Result
+open Base Url,,"page is open"
+input Hello World,Hello World,"search box shows: Hello World"
+click Click Me button,Hello Worlxxx,"You entered: Hello Worlxxx"

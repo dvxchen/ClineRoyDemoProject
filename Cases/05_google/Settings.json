@@ -1,0 +1,6 @@
+{
+    "BASE_URL": "https://www.google.com/",
+    "EMAIL_TO": "davy.chen@sap.com",
+    "SCHEDULE": "21:00",  
+    "Enabled": "true" 
+ }

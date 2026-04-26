@@ -1,9 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const os = require('os');
+const fs4 = require('fs').promises;
 
 // 1. 读取 log.json 文件
-const logFilePath = path.join(__dirname, 'merged-logs.json');
+const systemTempDir = os.tmpdir();
+const myAppDir = path.join(systemTempDir, 'MyApp', 'Logs');
+const filePath1 = path.join(myAppDir, 'merged-logs.json');
+
+const logFilePath = filePath1;
+
 let logData;
 
 try {
@@ -29,7 +36,7 @@ const transporter = nodemailer.createTransport({
 
 
 // 1. 读取 JSON 文件
-const filePath = path.join(__dirname, 'merged-logs.json');
+const filePath = logFilePath;
 const rawData = fs.readFileSync(filePath, 'utf8');
 const users = JSON.parse(rawData);
 const formatJson = JSON.stringify(users, null, 2);
@@ -77,6 +84,9 @@ async function sendEmail() {
     try {
         const info = await transporter.sendMail(mailOptions);
         console.log('✅ 邮件发送成功:', info.messageId);
+        //delete png files if have
+
+
     } catch (error) {
         console.error('❌ 邮件发送失败:', error.message);
     }
