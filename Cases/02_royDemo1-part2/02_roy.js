@@ -289,7 +289,7 @@ const fs = require('fs');
      */
       //将结果从 data.json 读出
 
-      console.log(__dirname);
+      //    console.log(__dirname);
       const path = require('path');
       const parentDir = path.join(__dirname, '..');
       const dataPath = path.join(__dirname, 'data.json');
