@@ -1,1 +1,2 @@
-02_roy.js 中加入csv执行每一步的log，格式为json 文件输出改为log.json, 每次运行时清空再写,
+Add log information for each step in first.js, format is Json, export to file log.json, clean the file content on every run
+C:\Users\I034841\AppData\Local\Temp\MyApp\Logs
